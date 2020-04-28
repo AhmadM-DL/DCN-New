@@ -1,6 +1,10 @@
 import torch
+import torch.nn as nn 
+import numpy as np
+from torch.nn.init import uniform_
+from torch.distributions.binomial import  Binomial
 
-class dA(torch.nn.Module):
+class dA(nn.Module):
 
   def __init__(self, n_visible, n_hidden, corruption_level):
     super(dA, self).__init__()
@@ -27,7 +31,7 @@ class dA(torch.nn.Module):
     weights_size = self.encoder[0].weight
     weights_bound = 4 * np.sqrt(6. / (self.n_hidden + self.n_visible))
 
-    tied_weights = nn.Parameter(uniform_(tensor(weights_size),a=-weights_bound,b=weights_bound))
+    tied_weights = nn.Parameter(uniform_(self.encoder[0].weight, a=-weights_bound, b=weights_bound))
 
     self.encoder[0].weight.data = tied_weights.clone()
     self.decoder[0].weight.data = self.encoder[0].weight.data.transpose(0,1)
@@ -38,10 +42,13 @@ class dA(torch.nn.Module):
   def forward(self,x):
 
     # add noise
-    x = x*Binomial(total_count=1, probs= 1 - self.corruption_level).sample([x.shape[0]])
+    x = x*Binomial(total_count=1, probs= 1 - self.corruption_level).sample([x.shape[1]])
     x = self.encoder(x)
     x = self.decoder(x)
     
     return x 
 
 class Sdc(torch.nn.Module):
+      
+    def __init__(self):
+      super(Sdc, self).__init__()
